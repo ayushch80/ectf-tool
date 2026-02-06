@@ -11,6 +11,7 @@ Copyright: Copyright (c) 2025 The MITRE Corporation
 """
 
 import struct
+from time import perf_counter
 from collections.abc import Iterator, Mapping
 from enum import IntEnum
 from typing import Any, ClassVar, Self
@@ -121,6 +122,7 @@ class HSMIntf:
 
     ser: Serial
     stream: bytes = b""
+    last_duration: float = 0.0  #: Duration in seconds of the most recent HSM operation
 
     @classmethod
     def from_port(
@@ -145,8 +147,10 @@ class HSMIntf:
             self.ser.open()
 
     def _send_respond(self, msg: Message) -> Message:
+        start = perf_counter()
         self.send_msg(msg)
         resp = self.get_msg()
+        self.last_duration = perf_counter() - start
         if resp.opcode != msg.opcode:
             raise HSMError(resp)
         return resp

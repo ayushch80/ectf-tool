@@ -32,6 +32,11 @@ MAX_FILE_LEN = 8192
 UUID_LEN = 16
 
 
+def report_time(action: str, hsm: HSMIntf) -> None:
+    """Print the HSM operation duration for the specified action."""
+    info(f"{action} time: {hsm.last_duration * 1000:.2f} ms")
+
+
 def dec_or_hex_int(value: int) -> int:
     """Int decode function for clearer typer help message"""
     return int(value, 0)
@@ -83,7 +88,6 @@ def read(
 ) -> None:
     """Read a file stored on the HSM"""
     hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     frame = struct.pack(f"<{PIN_LEN}sB", pin.encode(), slot)
 
     try:
@@ -92,16 +96,17 @@ def read(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        # should be an object matching name (null terminated) + contents
+        name, contents = file_data[:32].rstrip(b"\x00"), file_data[32:]
 
-    # should be an object matching name (null terminated) + contents
-    name, contents = file_data[:32].rstrip(b"\x00"), file_data[32:]
+        # Write the results to a file
+        full_path = read_file_path / name.decode("utf-8")
+        with Path.open(full_path, "wb" if force else "xb") as f:
+            f.write(contents)
 
-    # Write the results to a file
-    full_path = read_file_path / name.decode("utf-8")
-    with Path.open(full_path, "wb" if force else "xb") as f:
-        f.write(contents)
-
-    success(f"Read successful. Wrote file to {full_path.absolute()!s}")
+        success(f"Read successful. Wrote file to {full_path.absolute()!s}")
+        report_time("Read", hsm)
 
 
 @app.command()
@@ -136,8 +141,9 @@ def write(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-
-    success("Write successful")
+    else:
+        success("Write successful")
+        report_time("Write", hsm)
 
 
 @app.command()
@@ -148,7 +154,6 @@ def receive(
 ) -> None:
     """Receive a file stored on another HSM"""
     hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     frame = struct.pack(
         f"<{PIN_LEN}sBB",
         pin.encode(),
@@ -161,53 +166,57 @@ def receive(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-
-    success(f"Receive successful. Wrote file to local slot {write_slot}")
+    else:
+        success(f"Receive successful. Wrote file to local slot {write_slot}")
+        report_time("Receive", hsm)
 
 
 @app.command()
 def listen() -> None:
     """Alert the HSM to listen for another HSM"""
+    hsm = HSMIntf.from_port(CONFIG["PORT"])
     try:
-        HSMIntf.from_port(CONFIG["PORT"]).listen()
+        hsm.listen()
     except HSMError as e:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-    success("Listen successful")
+    else:
+        success("Listen successful")
+        report_time("Listen", hsm)
 
 
 @app.command("list")
 def list_(pin: PINArgTy) -> None:
     """List the files stored on the current HSM"""
     hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     try:
         file_list = hsm.list(pin)
     except HSMError as e:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        for slot, groupid, name in file_list:
+            info(f"Found file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
 
-    for slot, groupid, name in file_list:
-        info(f"Found file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
-
-    success("List successful")
+        success("List successful")
+        report_time("List", hsm)
 
 
 @app.command()
 def interrogate(pin: PINArgTy) -> None:
     """Interrogate files stored on a connected HSM"""
     hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     try:
         file_list = hsm.interrogate(pin)
     except HSMError as e:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        for slot, groupid, name in file_list:
+            info(f"Found remote file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
 
-    for slot, groupid, name in file_list:
-        info(f"Found remote file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
-
-    success("Interrogate successful")
+        success("Interrogate successful")
+        report_time("Interrogate", hsm)
