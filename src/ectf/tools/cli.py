@@ -34,7 +34,7 @@ UUID_LEN = 16
 
 def report_time(action: str, hsm: HSMIntf) -> None:
     """Print the HSM operation duration for the specified action."""
-    if hsm.last_duration <= 0:
+    if hsm.last_duration < 0:
         return
     info(f"{action} time: {hsm.last_duration * 1000:.2f} ms")
 
@@ -179,7 +179,8 @@ def receive(
 def listen() -> None:
     """Alert the HSM to listen for another HSM"""
     try:
-        (hsm := HSMIntf.from_port(CONFIG["PORT"])).listen()
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
+        hsm.listen()
     except HSMError as e:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
