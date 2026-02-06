@@ -150,9 +150,9 @@ class HSMIntf:
         start = perf_counter()
         self.send_msg(msg)
         resp = self.get_msg()
+        self.last_duration = perf_counter() - start
         if resp.opcode != msg.opcode:
             raise HSMError(resp)
-        self.last_duration = perf_counter() - start
         return resp
 
     def write_file(self, frame: bytes) -> None:
