@@ -147,7 +147,6 @@ class HSMIntf:
             self.ser.open()
 
     def _send_respond(self, msg: Message) -> Message:
-        self.last_duration = 0.0
         start = perf_counter()
         self.send_msg(msg)
         resp = self.get_msg()
