@@ -176,8 +176,8 @@ def receive(
 @app.command()
 def listen() -> None:
     """Alert the HSM to listen for another HSM"""
+    hsm = HSMIntf.from_port(CONFIG["PORT"])
     try:
-        hsm = HSMIntf.from_port(CONFIG["PORT"])
         hsm.listen()
     except HSMError as e:
         debug(e)
