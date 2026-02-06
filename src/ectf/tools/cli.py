@@ -176,15 +176,17 @@ def receive(
 @app.command()
 def listen() -> None:
     """Alert the HSM to listen for another HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
+    hsm: HSMIntf | None = None
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         hsm.listen()
     except HSMError as e:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
     success("Listen successful")
-    report_time("Listen", hsm)
+    if hsm is not None:
+        report_time("Listen", hsm)
 
 
 @app.command("list")

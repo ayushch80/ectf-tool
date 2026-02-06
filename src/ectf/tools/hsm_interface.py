@@ -147,12 +147,11 @@ class HSMIntf:
             self.ser.open()
 
     def _send_respond(self, msg: Message) -> Message:
+        self.last_duration = 0.0
         start = perf_counter()
-        try:
-            self.send_msg(msg)
-            resp = self.get_msg()
-        finally:
-            self.last_duration = perf_counter() - start
+        self.send_msg(msg)
+        resp = self.get_msg()
+        self.last_duration = perf_counter() - start
         if resp.opcode != msg.opcode:
             raise HSMError(resp)
         return resp
