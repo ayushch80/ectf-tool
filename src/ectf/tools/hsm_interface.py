@@ -122,7 +122,7 @@ class HSMIntf:
 
     ser: Serial
     stream: bytes = b""
-    last_duration: float = 0.0  #: Duration in seconds of the most recent HSM operation
+    last_duration: float = 0.0  #: Duration in seconds of the most recent HSM operation (converted to ms for CLI display)
 
     @classmethod
     def from_port(
@@ -148,12 +148,9 @@ class HSMIntf:
 
     def _send_respond(self, msg: Message) -> Message:
         start = perf_counter()
-        try:
-            self.send_msg(msg)
-            resp = self.get_msg()
-        finally:
-            end = perf_counter()
-            self.last_duration = end - start
+        self.send_msg(msg)
+        resp = self.get_msg()
+        self.last_duration = perf_counter() - start
         if resp.opcode != msg.opcode:
             raise HSMError(resp)
         return resp
