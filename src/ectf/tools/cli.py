@@ -96,17 +96,17 @@ def read(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        # should be an object matching name (null terminated) + contents
+        name, contents = file_data[:32].rstrip(b"\x00"), file_data[32:]
 
-    # should be an object matching name (null terminated) + contents
-    name, contents = file_data[:32].rstrip(b"\x00"), file_data[32:]
+        # Write the results to a file
+        full_path = read_file_path / name.decode("utf-8")
+        with Path.open(full_path, "wb" if force else "xb") as f:
+            f.write(contents)
 
-    # Write the results to a file
-    full_path = read_file_path / name.decode("utf-8")
-    with Path.open(full_path, "wb" if force else "xb") as f:
-        f.write(contents)
-
-    success(f"Read successful. Wrote file to {full_path.absolute()!s}")
-    report_time("Read", hsm)
+        success(f"Read successful. Wrote file to {full_path.absolute()!s}")
+        report_time("Read", hsm)
 
 
 @app.command()
@@ -141,9 +141,9 @@ def write(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-
-    success("Write successful")
-    report_time("Write", hsm)
+    else:
+        success("Write successful")
+        report_time("Write", hsm)
 
 
 @app.command()
@@ -166,9 +166,9 @@ def receive(
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-
-    success(f"Receive successful. Wrote file to local slot {write_slot}")
-    report_time("Receive", hsm)
+    else:
+        success(f"Receive successful. Wrote file to local slot {write_slot}")
+        report_time("Receive", hsm)
 
 
 @app.command()
@@ -181,8 +181,9 @@ def listen() -> None:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
-    success("Listen successful")
-    report_time("Listen", hsm)
+    else:
+        success("Listen successful")
+        report_time("Listen", hsm)
 
 
 @app.command("list")
@@ -195,12 +196,12 @@ def list_(pin: PINArgTy) -> None:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        for slot, groupid, name in file_list:
+            info(f"Found file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
 
-    for slot, groupid, name in file_list:
-        info(f"Found file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
-
-    success("List successful")
-    report_time("List", hsm)
+        success("List successful")
+        report_time("List", hsm)
 
 
 @app.command()
@@ -213,9 +214,9 @@ def interrogate(pin: PINArgTy) -> None:
         debug(e)
         error(f"HSM failed with error: {e.args[0]!r}")
         sys.exit(-1)
+    else:
+        for slot, groupid, name in file_list:
+            info(f"Found remote file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
 
-    for slot, groupid, name in file_list:
-        info(f"Found remote file: Slot {slot:x}, Group {groupid:x}, {name.decode()}")
-
-    success("Interrogate successful")
-    report_time("Interrogate", hsm)
+        success("Interrogate successful")
+        report_time("Interrogate", hsm)
