@@ -151,12 +151,8 @@ class HSMIntf:
         try:
             self.send_msg(msg)
             resp = self.get_msg()
-        except Exception:
-            end = perf_counter()
-            self.last_duration = end - start
-            raise
-        end = perf_counter()
-        self.last_duration = end - start
+        finally:
+            self.last_duration = perf_counter() - start
         if resp.opcode != msg.opcode:
             raise HSMError(resp)
         return resp
