@@ -122,7 +122,7 @@ class HSMIntf:
 
     ser: Serial
     stream: bytes = b""
-    last_duration: float = 0.0  #: Duration in seconds of the most recent HSM operation (converted to ms for CLI display)
+    last_duration: float = 0.0  #: Duration in seconds of the most recent HSM operation
 
     @classmethod
     def from_port(
