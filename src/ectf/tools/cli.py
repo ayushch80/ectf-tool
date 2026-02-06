@@ -34,8 +34,6 @@ UUID_LEN = 16
 
 def report_time(action: str, hsm: HSMIntf) -> None:
     """Print the HSM operation duration for the specified action."""
-    if hsm.last_duration < 0:
-        return
     info(f"{action} time: {hsm.last_duration * 1000:.2f} ms")
 
 
