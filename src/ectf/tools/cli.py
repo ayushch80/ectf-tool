@@ -87,11 +87,10 @@ def read(
     force: Annotated[bool, typer.Option("--force", "-f")] = False,  # noqa: FBT002
 ) -> None:
     """Read a file stored on the HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     frame = struct.pack(f"<{PIN_LEN}sB", pin.encode(), slot)
 
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         file_data = hsm.read_file(frame)
     except HSMError as e:
         debug(e)
@@ -122,7 +121,6 @@ def write(
     uuid: UUIDArgTy,
 ) -> None:
     """Write a file stored to the HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
     file_contents = file.read()
 
     # Package the frame and run write
@@ -137,6 +135,7 @@ def write(
     )
     frame += file_contents
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         hsm.write_file(frame)
     except HSMError as e:
         debug(e)
@@ -154,8 +153,6 @@ def receive(
     write_slot: SlotArgTy,
 ) -> None:
     """Receive a file stored on another HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     frame = struct.pack(
         f"<{PIN_LEN}sBB",
         pin.encode(),
@@ -163,6 +160,7 @@ def receive(
         write_slot,
     )
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         hsm.receive(frame)
     except HSMError as e:
         debug(e)
@@ -190,9 +188,8 @@ def listen() -> None:
 @app.command("list")
 def list_(pin: PINArgTy) -> None:
     """List the files stored on the current HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         file_list = hsm.list(pin)
     except HSMError as e:
         debug(e)
@@ -209,9 +206,8 @@ def list_(pin: PINArgTy) -> None:
 @app.command()
 def interrogate(pin: PINArgTy) -> None:
     """Interrogate files stored on a connected HSM"""
-    hsm = HSMIntf.from_port(CONFIG["PORT"])
-
     try:
+        hsm = HSMIntf.from_port(CONFIG["PORT"])
         file_list = hsm.interrogate(pin)
     except HSMError as e:
         debug(e)
